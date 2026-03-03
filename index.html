@@ -1,41 +1,55 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanz Tracker</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f6f9; }
-        h1 { text-align: center; }
-        .container { max-width: 540px; margin: auto; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .income { color: green; }
-        .expense { color: red; }
-        .transaction { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
-        .delete-btn, .edit-btn { padding: 5px 8px; font-size: 14px; margin-left: 5px; }
-        .delete-btn { background: red; color: white; }
-        .edit-btn { background: orange; color: white; }
-        .bar-container { margin-top: 15px; }
-        .bar { height: 20px; border-radius: 6px; margin-top: 5px; }
-        .bar-income { background: green; }
-        .bar-expense { background: red; }
-        .comparison-text { margin-top: 10px; font-weight: bold; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanz Tracker</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f9; }
+    header { background: #007bff; color: white; padding: 15px; text-align: center; font-size: 24px; }
+    nav { display: flex; justify-content: space-around; background: #0056b3; }
+    nav button { flex: 1; padding: 12px; background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
+    nav button.active { background: #003f7f; }
+    .container { max-width: 600px; margin: 20px auto; padding: 10px; }
+    .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .income { color: green; }
+    .expense { color: red; }
+    .transaction { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
+    .delete-btn, .edit-btn { padding: 5px 8px; font-size: 14px; margin-left: 5px; }
+    .delete-btn { background: red; color: white; }
+    .edit-btn { background: orange; color: white; }
+    .bar-container { margin-top: 10px; }
+    .bar { height: 20px; border-radius: 6px; margin-top: 5px; }
+    .bar-income { background: green; }
+    .bar-expense { background: red; }
+    .overview { display: flex; justify-content: space-between; margin-top: 10px; }
+    .overview div { width: 48%; padding: 10px; background: #f1f1f1; border-radius: 6px; text-align: center; }
+</style>
 </head>
 <body>
+<header>Finanz Tracker</header>
+<nav>
+    <button id="overviewBtn" class="active" onclick="showPage('overview')">Übersicht</button>
+    <button id="incomeBtn" onclick="showPage('income')">Einnahmen</button>
+    <button id="fixedBtn" onclick="showPage('fixed')">Fixe Ausgaben</button>
+</nav>
 
 <div class="container">
-    <h1>Finanz Tracker</h1>
 
+<div id="overviewPage" class="page">
     <div class="card">
-        <div>Kontostand: <strong id="balance">0 €</strong></div>
-        <div>Einnahmen: <span class="income" id="totalIncome">0 €</span></div>
-        <div>Fixe Ausgaben: <span class="expense" id="totalFixed">0 €</span></div>
-        <div>Sonderausgaben: <span class="expense" id="totalSpecial">0 €</span></div>
-        <div>Verfügbares Geld: <strong id="available">0 €</strong></div>
+        <h3>Kontostand & Überblick</h3>
+        <div class="overview">
+            <div>Einnahmen<br><strong id="totalIncome">0 €</strong></div>
+            <div>Verfügbar<br><strong id="available">0 €</strong></div>
+        </div>
+        <div class="overview">
+            <div>Fixe Ausgaben<br><strong id="totalFixed">0 €</strong></div>
+            <div>Sonderausgaben<br><strong id="totalSpecial">0 €</strong></div>
+        </div>
         <div class="bar-container">
             <div>Einnahmen</div>
             <div id="incomeBar" class="bar bar-income" style="width:0%"></div>
@@ -44,134 +58,145 @@
             <div>Sonderausgaben</div>
             <div id="specialBar" class="bar bar-expense" style="width:0%"></div>
         </div>
-        <div id="comparison" class="comparison-text"></div>
+        <div id="comparison" style="margin-top:10px;font-weight:bold"></div>
         <button onclick="resetSpecialExpenses()" style="margin-top:10px; background:#dc3545;">Alle Sonderausgaben zurücksetzen</button>
     </div>
+</div>
 
+<div id="incomePage" class="page" style="display:none;">
     <div class="card">
+        <h3>Einnahmen</h3>
         <input type="text" id="title" placeholder="Bezeichnung">
         <input type="number" id="amount" placeholder="Betrag" step="0.01">
         <select id="type">
             <option value="income">Einnahme</option>
-            <option value="fixed">Fixe Ausgabe</option>
-            <option value="special">Sonderausgabe</option>
         </select>
         <button onclick="addTransaction()">Hinzufügen</button>
-    </div>
-
-    <div class="card">
-        <h3>Buchungen</h3>
-        <div id="transactionList"></div>
+        <div id="transactionListIncome" style="margin-top:15px;"></div>
     </div>
 </div>
 
+<div id="fixedPage" class="page" style="display:none;">
+    <div class="card">
+        <h3>Fixe Ausgaben</h3>
+        <input type="text" id="fixedTitle" placeholder="Bezeichnung">
+        <input type="number" id="fixedAmount" placeholder="Betrag" step="0.01">
+        <select id="fixedType">
+            <option value="fixed">Fixe Ausgabe</option>
+        </select>
+        <button onclick="addTransaction(true)">Hinzufügen</button>
+        <div id="transactionListFixed" style="margin-top:15px;"></div>
+    </div>
+</div>
+
+</div>
+
 <script>
-    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 
-    function saveTransactions() {
-        localStorage.setItem("transactions", JSON.stringify(transactions));
-    }
+function saveTransactions() {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+}
 
-    function addTransaction() {
-        const title = document.getElementById("title").value;
-        const amount = parseFloat(document.getElementById("amount").value);
-        const type = document.getElementById("type").value;
-        if (!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
-        transactions.push({ id: Date.now(), title, amount, type });
-        saveTransactions();
-        document.getElementById("title").value = "";
-        document.getElementById("amount").value = "";
-        render();
-    }
+function addTransaction(isFixedPage=false) {
+    let titleInput = isFixedPage ? document.getElementById("fixedTitle") : document.getElementById("title");
+    let amountInput = isFixedPage ? document.getElementById("fixedAmount") : document.getElementById("amount");
+    let typeInput = isFixedPage ? document.getElementById("fixedType") : document.getElementById("type");
 
-    function deleteTransaction(id) {
-        transactions = transactions.filter(t => t.id !== id);
-        saveTransactions();
-        render();
-    }
+    const title = titleInput.value;
+    const amount = parseFloat(amountInput.value);
+    const type = typeInput.value;
+    if (!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
 
-    function editTransaction(id) {
-        const t = transactions.find(tr => tr.id === id);
-        if (t) {
-            const newTitle = prompt("Neue Bezeichnung:", t.title);
-            const newAmount = parseFloat(prompt("Neuer Betrag:", t.amount));
-            if (newTitle && !isNaN(newAmount)) {
-                t.title = newTitle;
-                t.amount = newAmount;
-                saveTransactions();
-                render();
-            }
+    transactions.push({ id: Date.now(), title, amount, type });
+    saveTransactions();
+    titleInput.value = "";
+    amountInput.value = "";
+    render();
+}
+
+function deleteTransaction(id) {
+    transactions = transactions.filter(t => t.id !== id);
+    saveTransactions();
+    render();
+}
+
+function editTransaction(id) {
+    const t = transactions.find(tr => tr.id === id);
+    if (t) {
+        const newTitle = prompt("Neue Bezeichnung:", t.title);
+        const newAmount = parseFloat(prompt("Neuer Betrag:", t.amount));
+        if (newTitle && !isNaN(newAmount)) {
+            t.title = newTitle;
+            t.amount = newAmount;
+            saveTransactions();
+            render();
         }
     }
+}
 
-    function resetSpecialExpenses() {
-        transactions = transactions.filter(t => t.type !== 'special');
-        saveTransactions();
-        render();
-    }
-
-    function render() {
-        const list = document.getElementById("transactionList");
-        list.innerHTML = "";
-
-        let totalIncome = 0;
-        let totalFixed = 0;
-        let specialMap = {};
-
-        transactions.forEach(t => {
-            if (t.type === "income") totalIncome += t.amount;
-            else if (t.type === "fixed") totalFixed += t.amount;
-            else if (t.type === "special") {
-                if (specialMap[t.title]) specialMap[t.title] += t.amount;
-                else specialMap[t.title] = t.amount;
-            }
-        });
-
-        transactions.forEach(t => {
-            if (t.type === 'special') return;
-            const div = document.createElement("div");
-            div.classList.add("transaction");
-            let actionButtons = `<button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>`;
-            if (t.type==='income' || t.type==='fixed') actionButtons = `<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>` + actionButtons;
-            div.innerHTML = `
-                <div>${t.title} <small class='${t.type==='income'?'income':'expense'}'>${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €</small></div>
-                <div>${actionButtons}</div>
-            `;
-            list.appendChild(div);
-        });
-
-        Object.keys(specialMap).forEach(title => {
-            const div = document.createElement("div");
-            div.classList.add("transaction");
-            div.innerHTML = `
-                <div>${title} <small class='expense'>- ${specialMap[title].toFixed(2)} €</small></div>
-                <div></div>
-            `;
-            list.appendChild(div);
-        });
-
-        const totalSpecial = Object.values(specialMap).reduce((a,b)=>a+b,0);
-        const balance = totalIncome - totalFixed - totalSpecial;
-
-        document.getElementById("totalIncome").textContent = totalIncome.toFixed(2)+" €";
-        document.getElementById("totalFixed").textContent = totalFixed.toFixed(2)+" €";
-        document.getElementById("totalSpecial").textContent = totalSpecial.toFixed(2)+" €";
-        document.getElementById("balance").textContent = balance.toFixed(2)+" €";
-        document.getElementById("available").textContent = balance.toFixed(2)+" €";
-        document.getElementById("balance").style.color = balance>=0?"green":"red";
-
-        const maxValue = Math.max(totalIncome,totalFixed,totalSpecial,1);
-        document.getElementById("incomeBar").style.width = (totalIncome/maxValue*100)+"%";
-        document.getElementById("fixedBar").style.width = (totalFixed/maxValue*100)+"%";
-        document.getElementById("specialBar").style.width = (totalSpecial/maxValue*100)+"%";
-
-        const comparison = document.getElementById("comparison");
-        if(totalIncome>totalFixed+totalSpecial){ comparison.textContent = "Du nimmst mehr ein als du ausgibst ✔"; comparison.style.color="green"; }
-        else if(totalFixed+totalSpecial>totalIncome){ comparison.textContent = "Achtung: Deine Ausgaben sind höher als deine Einnahmen!"; comparison.style.color="red"; }
-        else{ comparison.textContent = "Einnahmen und Ausgaben sind gleich hoch."; comparison.style.color="black"; }
-    }
-
+function resetSpecialExpenses() {
+    transactions = transactions.filter(t => t.type !== 'special');
+    saveTransactions();
     render();
+}
+
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.style.display='none');
+    document.getElementById(page+'Page').style.display='block';
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(page+'Btn').classList.add('active');
+}
+
+function render() {
+    const overviewIncome = document.getElementById("totalIncome");
+    const overviewFixed = document.getElementById("totalFixed");
+    const overviewSpecial = document.getElementById("totalSpecial");
+    const availableField = document.getElementById("available");
+
+    let totalIncome=0, totalFixed=0, specialMap={};
+
+    transactions.forEach(t=>{
+        if(t.type==='income') totalIncome+=t.amount;
+        else if(t.type==='fixed') totalFixed+=t.amount;
+        else if(t.type==='special') specialMap[t.title]=(specialMap[t.title]||0)+t.amount;
+    });
+
+    const totalSpecial = Object.values(specialMap).reduce((a,b)=>a+b,0);
+    const balance = totalIncome - totalFixed - totalSpecial;
+
+    overviewIncome.textContent = totalIncome.toFixed(2)+" €";
+    overviewFixed.textContent = totalFixed.toFixed(2)+" €";
+    overviewSpecial.textContent = totalSpecial.toFixed(2)+" €";
+    availableField.textContent = balance.toFixed(2)+" €";
+
+    document.getElementById("incomeBar").style.width=(totalIncome>0?Math.min(totalIncome,100):0)+"%";
+    document.getElementById("fixedBar").style.width=(totalFixed>0?Math.min(totalFixed,100):0)+"%";
+    document.getElementById("specialBar").style.width=(totalSpecial>0?Math.min(totalSpecial,100):0)+"%";
+
+    document.getElementById("comparison").textContent = totalIncome>totalFixed+totalSpecial ? "Du nimmst mehr ein als du ausgibst ✔" : (totalFixed+totalSpecial>totalIncome ? "Achtung: Deine Ausgaben sind höher als deine Einnahmen!" : "Einnahmen und Ausgaben sind gleich hoch.");
+
+    renderTransactionLists();
+}
+
+function renderTransactionLists() {
+    const incomeList = document.getElementById("transactionListIncome");
+    const fixedList = document.getElementById("transactionListFixed");
+    incomeList.innerHTML="";
+    fixedList.innerHTML="";
+
+    transactions.forEach(t=>{
+        const div = document.createElement('div');
+        div.classList.add('transaction');
+        let buttons = `<button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>`;
+        if(t.type==='income'||t.type==='fixed') buttons=`<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>`+buttons;
+        div.innerHTML=`<div>${t.title} <small class='${t.type==='income'?'income':'expense'}'>${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €</small></div><div>${buttons}</div>`;
+        if(t.type==='income') incomeList.appendChild(div);
+        else if(t.type==='fixed') fixedList.appendChild(div);
+    });
+}
+
+render();
 </script>
 
 </body>
