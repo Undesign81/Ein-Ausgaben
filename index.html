@@ -37,6 +37,7 @@
 
 <div class="container">
 
+<!-- Übersicht -->
 <div id="overviewPage" class="page">
     <div class="card">
         <h3>Kontostand & Überblick</h3>
@@ -54,6 +55,7 @@
     </div>
 </div>
 
+<!-- Einnahmen -->
 <div id="incomePage" class="page" style="display:none;">
     <div class="card">
         <h3>Einnahmen</h3>
@@ -67,6 +69,7 @@
     </div>
 </div>
 
+<!-- Fixe Ausgaben -->
 <div id="fixedPage" class="page" style="display:none;">
     <div class="card">
         <h3>Fixe Ausgaben</h3>
@@ -80,17 +83,20 @@
     </div>
 </div>
 
+<!-- Sonderausgaben -->
 <div id="specialPage" class="page" style="display:none;">
     <div class="card">
         <h3>Sonderausgaben</h3>
-        <input type="text" id="specialTitle" placeholder="Bezeichnung">
+        <!-- Sonderausgaben-Diagramm oben -->
+        <canvas id="specialChart" style="margin-top:15px;"></canvas>
+
+        <input type="text" id="specialTitle" placeholder="Bezeichnung" style="margin-top:15px;">
         <input type="number" id="specialAmount" placeholder="Betrag" step="0.01">
         <select id="specialType">
             <option value="special">Sonderausgabe</option>
         </select>
         <button onclick="addTransactionSpecial()">Hinzufügen</button>
         <div id="transactionListSpecial" style="margin-top:15px;"></div>
-        <canvas id="specialChart" style="margin-top:15px;"></canvas>
     </div>
 </div>
 
@@ -204,7 +210,7 @@ function renderChart(fixed, special, available) {
     });
 }
 
-// Neues Kuchendiagramm für Sonderausgaben nach Bezeichnung
+// Kuchendiagramm für Sonderausgaben nach Bezeichnung
 function renderSpecialChart(specialMap){
     const ctx=document.getElementById('specialChart').getContext('2d');
     if(specialChart) specialChart.destroy();
