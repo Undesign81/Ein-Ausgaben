@@ -5,79 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finanz Tracker</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f4f6f9;
-        }
-
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f6f9; }
         h1 { text-align: center; }
-
-        .container {
-            max-width: 520px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
+        .container { max-width: 520px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
         button:hover { background: #0056b3; }
-
         .income { color: green; }
         .expense { color: red; }
-
-        .transaction {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-            align-items: center;
-        }
-
-        .delete-btn {
-            background: red;
-            padding: 5px 8px;
-            font-size: 14px;
-        }
-
-        .bar-container {
-            margin-top: 15px;
-        }
-
-        .bar {
-            height: 20px;
-            border-radius: 6px;
-            margin-top: 5px;
-        }
-
+        .transaction { display: flex; justify-content: space-between; margin-top: 8px; align-items: center; }
+        .delete-btn, .edit-btn { padding: 5px 8px; font-size: 14px; margin-left: 5px; }
+        .delete-btn { background: red; color: white; }
+        .edit-btn { background: orange; color: white; }
+        .bar-container { margin-top: 15px; }
+        .bar { height: 20px; border-radius: 6px; margin-top: 5px; }
         .bar-income { background: green; }
         .bar-expense { background: red; }
-
-        .comparison-text {
-            margin-top: 10px;
-            font-weight: bold;
-        }
+        .comparison-text { margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -89,15 +34,14 @@
         <div>Kontostand: <strong id="balance">0 €</strong></div>
         <div>Einnahmen: <span class="income" id="totalIncome">0 €</span></div>
         <div>Ausgaben: <span class="expense" id="totalExpense">0 €</span></div>
-
         <div class="bar-container">
             <div>Einnahmen</div>
             <div id="incomeBar" class="bar bar-income" style="width:0%"></div>
             <div>Ausgaben</div>
             <div id="expenseBar" class="bar bar-expense" style="width:0%"></div>
         </div>
-
         <div id="comparison" class="comparison-text"></div>
+        <button onclick="resetExpenses()" style="margin-top:10px; background:#dc3545;">Alle Ausgaben zurücksetzen</button>
     </div>
 
     <div class="card">
@@ -127,18 +71,11 @@
         const title = document.getElementById("title").value;
         const amount = parseFloat(document.getElementById("amount").value);
         const type = document.getElementById("type").value;
-
-        if (!title || isNaN(amount)) {
-            alert("Bitte gültige Daten eingeben");
-            return;
-        }
-
+        if (!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
         transactions.push({ id: Date.now(), title, amount, type });
         saveTransactions();
-
         document.getElementById("title").value = "";
         document.getElementById("amount").value = "";
-
         render();
     }
 
@@ -148,55 +85,62 @@
         render();
     }
 
+    function editTransaction(id) {
+        const t = transactions.find(tr => tr.id === id);
+        if (t) {
+            const newTitle = prompt("Neue Bezeichnung:", t.title);
+            const newAmount = parseFloat(prompt("Neuer Betrag:", t.amount));
+            if (newTitle && !isNaN(newAmount)) {
+                t.title = newTitle;
+                t.amount = newAmount;
+                saveTransactions();
+                render();
+            }
+        }
+    }
+
+    function resetExpenses() {
+        transactions = transactions.filter(t => t.type === 'income');
+        saveTransactions();
+        render();
+    }
+
     function render() {
         const list = document.getElementById("transactionList");
         list.innerHTML = "";
-
         let totalIncome = 0;
         let totalExpense = 0;
-
         transactions.forEach(t => {
-            const div = document.createElement("div");
-            div.classList.add("transaction");
-
             if (t.type === "income") totalIncome += t.amount;
             else totalExpense += t.amount;
-
+            const div = document.createElement("div");
+            div.classList.add("transaction");
             div.innerHTML = `
                 <div>
                     ${t.title}<br>
-                    <small class="${t.type === 'income' ? 'income' : 'expense'}">
-                        ${t.type === 'income' ? '+' : '-'} ${t.amount.toFixed(2)} €
+                    <small class="${t.type==='income'?'income':'expense'}">
+                        ${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €
                     </small>
                 </div>
-                <button class="delete-btn" onclick="deleteTransaction(${t.id})">X</button>
+                <div>
+                    ${t.type==='income'?`<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>`:''}
+                    <button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>
+                </div>
             `;
-
             list.appendChild(div);
         });
-
         const balance = totalIncome - totalExpense;
-
-        document.getElementById("totalIncome").textContent = totalIncome.toFixed(2) + " €";
-        document.getElementById("totalExpense").textContent = totalExpense.toFixed(2) + " €";
-        document.getElementById("balance").textContent = balance.toFixed(2) + " €";
-        document.getElementById("balance").style.color = balance >= 0 ? "green" : "red";
-
-        const maxValue = Math.max(totalIncome, totalExpense, 1);
-        document.getElementById("incomeBar").style.width = (totalIncome / maxValue * 100) + "%";
-        document.getElementById("expenseBar").style.width = (totalExpense / maxValue * 100) + "%";
-
+        document.getElementById("totalIncome").textContent = totalIncome.toFixed(2)+" €";
+        document.getElementById("totalExpense").textContent = totalExpense.toFixed(2)+" €";
+        document.getElementById("balance").textContent = balance.toFixed(2)+" €";
+        document.getElementById("balance").style.color = balance>=0?"green":"red";
+        const maxValue = Math.max(totalIncome,totalExpense,1);
+        document.getElementById("incomeBar").style.width = (totalIncome/maxValue*100)+"%";
+        document.getElementById("expenseBar").style.width = (totalExpense/maxValue*100)+"%";
         const comparison = document.getElementById("comparison");
-        if (totalIncome > totalExpense) {
-            comparison.textContent = "Du nimmst mehr ein als du ausgibst ✔";
-            comparison.style.color = "green";
-        } else if (totalExpense > totalIncome) {
-            comparison.textContent = "Achtung: Deine Ausgaben sind höher als deine Einnahmen!";
-            comparison.style.color = "red";
-        } else {
-            comparison.textContent = "Einnahmen und Ausgaben sind gleich hoch.";
-            comparison.style.color = "black";
-        }
+        if(totalIncome>totalExpense){ comparison.textContent = "Du nimmst mehr ein als du ausgibst ✔"; comparison.style.color="green"; }
+        else if(totalExpense>totalIncome){ comparison.textContent = "Achtung: Deine Ausgaben sind höher als deine Einnahmen!"; comparison.style.color="red"; }
+        else{ comparison.textContent = "Einnahmen und Ausgaben sind gleich hoch."; comparison.style.color="black"; }
     }
 
     render();
