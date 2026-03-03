@@ -99,9 +99,7 @@
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 let financeChart;
 
-function saveTransactions() {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-}
+function saveTransactions() { localStorage.setItem("transactions", JSON.stringify(transactions)); }
 
 function addTransaction(isFixedPage=false) {
     let titleInput = isFixedPage ? document.getElementById("fixedTitle") : document.getElementById("title");
@@ -142,12 +140,7 @@ function editTransaction(id) {
     if (t) {
         const newTitle = prompt("Neue Bezeichnung:", t.title);
         const newAmount = parseFloat(prompt("Neuer Betrag:", t.amount));
-        if (newTitle && !isNaN(newAmount)) {
-            t.title = newTitle;
-            t.amount = newAmount;
-            saveTransactions();
-            render();
-        }
+        if (newTitle && !isNaN(newAmount)) { t.title = newTitle; t.amount = newAmount; saveTransactions(); render(); }
     }
 }
 
@@ -179,25 +172,24 @@ function render() {
     });
 
     const totalSpecial = Object.values(specialMap).reduce((a,b)=>a+b,0);
-    const balance = totalIncome - totalFixed - totalSpecial;
+    const available = totalIncome - totalFixed - totalSpecial;
 
     overviewIncome.textContent = totalIncome.toFixed(2)+" €";
     overviewFixed.textContent = totalFixed.toFixed(2)+" €";
     overviewSpecial.textContent = totalSpecial.toFixed(2)+" €";
-    availableField.textContent = balance.toFixed(2)+" €";
+    availableField.textContent = available.toFixed(2)+" €";
 
     document.getElementById("comparison").textContent = totalIncome>totalFixed+totalSpecial ? "Du nimmst mehr ein als du ausgibst ✔" : (totalFixed+totalSpecial>totalIncome ? "Achtung: Deine Ausgaben sind höher als deine Einnahmen!" : "Einnahmen und Ausgaben sind gleich hoch.");
 
     renderTransactionLists();
     renderSpecialList(specialMap);
-    renderChart(totalIncome, totalFixed, totalSpecial, balance);
+    renderChart(totalFixed, totalSpecial, available);
 }
 
 function renderTransactionLists() {
     const incomeList = document.getElementById("transactionListIncome");
     const fixedList = document.getElementById("transactionListFixed");
-    incomeList.innerHTML="";
-    fixedList.innerHTML="";
+    incomeList.innerHTML=""; fixedList.innerHTML="";
 
     transactions.forEach(t=>{
         const div = document.createElement('div');
@@ -221,21 +213,23 @@ function renderSpecialList(specialMap){
     });
 }
 
-function renderChart(income, fixed, special, available) {
+// Neues Kuchendiagramm: Einnahmen als Basis, Ausgaben und verfügbares Geld als Anteile
+function renderChart(fixed, special, available) {
     const ctx = document.getElementById('financeChart').getContext('2d');
     if(financeChart) financeChart.destroy();
+
     financeChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: ['Einnahmen', 'Fixe Ausgaben', 'Sonderausgaben', 'Verfügbares Geld'],
+            labels: ['Fixe Ausgaben', 'Sonderausgaben', 'Verfügbares Geld'],
             datasets: [{
-                data: [income, fixed, special, available],
-                backgroundColor: ['#28a745','#dc3545','#ffc107','#17a2b8']
+                data: [fixed, special, available],
+                backgroundColor: ['#dc3545','#ffc107','#28a745']
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: 'bottom' } }
+            plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Einnahmen-Verteilung' } }
         }
     });
 }
