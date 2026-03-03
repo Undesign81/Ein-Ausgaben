@@ -90,6 +90,7 @@
         </select>
         <button onclick="addTransactionSpecial()">Hinzufügen</button>
         <div id="transactionListSpecial" style="margin-top:15px;"></div>
+        <canvas id="specialChart" style="margin-top:15px;"></canvas>
     </div>
 </div>
 
@@ -97,7 +98,7 @@
 
 <script>
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
-let financeChart;
+let financeChart, specialChart;
 
 function saveTransactions() { localStorage.setItem("transactions", JSON.stringify(transactions)); }
 
@@ -105,16 +106,12 @@ function addTransaction(isFixedPage=false) {
     let titleInput = isFixedPage ? document.getElementById("fixedTitle") : document.getElementById("title");
     let amountInput = isFixedPage ? document.getElementById("fixedAmount") : document.getElementById("amount");
     let typeInput = isFixedPage ? document.getElementById("fixedType") : document.getElementById("type");
-
     const title = titleInput.value;
     const amount = parseFloat(amountInput.value);
     const type = typeInput.value;
     if (!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
-
     transactions.push({ id: Date.now(), title, amount, type });
-    saveTransactions();
-    titleInput.value = "";
-    amountInput.value = "";
+    saveTransactions(); titleInput.value=""; amountInput.value="";
     render();
 }
 
@@ -123,114 +120,101 @@ function addTransactionSpecial() {
     const amount = parseFloat(document.getElementById("specialAmount").value);
     if(!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
     transactions.push({ id: Date.now(), title, amount, type: 'special'});
-    saveTransactions();
-    document.getElementById("specialTitle").value="";
-    document.getElementById("specialAmount").value="";
+    saveTransactions(); document.getElementById("specialTitle").value=""; document.getElementById("specialAmount").value="";
     render();
 }
 
-function deleteTransaction(id) {
-    transactions = transactions.filter(t => t.id !== id);
-    saveTransactions();
-    render();
-}
+function deleteTransaction(id) { transactions = transactions.filter(t => t.id !== id); saveTransactions(); render(); }
 
 function editTransaction(id) {
     const t = transactions.find(tr => tr.id === id);
-    if (t) {
+    if(t) {
         const newTitle = prompt("Neue Bezeichnung:", t.title);
         const newAmount = parseFloat(prompt("Neuer Betrag:", t.amount));
-        if (newTitle && !isNaN(newAmount)) { t.title = newTitle; t.amount = newAmount; saveTransactions(); render(); }
+        if(newTitle && !isNaN(newAmount)) { t.title=newTitle; t.amount=newAmount; saveTransactions(); render(); }
     }
 }
 
-function resetSpecialExpenses() {
-    transactions = transactions.filter(t => t.type !== 'special');
-    saveTransactions();
-    render();
-}
+function resetSpecialExpenses() { transactions = transactions.filter(t => t.type !== 'special'); saveTransactions(); render(); }
 
 function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.style.display='none');
+    document.querySelectorAll('.page').forEach(p=>p.style.display='none');
     document.getElementById(page+'Page').style.display='block';
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
     document.getElementById(page+'Btn').classList.add('active');
 }
 
 function render() {
-    const overviewIncome = document.getElementById("totalIncome");
-    const overviewFixed = document.getElementById("totalFixed");
-    const overviewSpecial = document.getElementById("totalSpecial");
-    const availableField = document.getElementById("available");
-
+    const overviewIncome=document.getElementById("totalIncome");
+    const overviewFixed=document.getElementById("totalFixed");
+    const overviewSpecial=document.getElementById("totalSpecial");
+    const availableField=document.getElementById("available");
     let totalIncome=0, totalFixed=0, specialMap={};
-
     transactions.forEach(t=>{
         if(t.type==='income') totalIncome+=t.amount;
         else if(t.type==='fixed') totalFixed+=t.amount;
         else if(t.type==='special') specialMap[t.title]=(specialMap[t.title]||0)+t.amount;
     });
-
     const totalSpecial = Object.values(specialMap).reduce((a,b)=>a+b,0);
     const available = totalIncome - totalFixed - totalSpecial;
-
     overviewIncome.textContent = totalIncome.toFixed(2)+" €";
     overviewFixed.textContent = totalFixed.toFixed(2)+" €";
     overviewSpecial.textContent = totalSpecial.toFixed(2)+" €";
     availableField.textContent = available.toFixed(2)+" €";
-
     document.getElementById("comparison").textContent = totalIncome>totalFixed+totalSpecial ? "Du nimmst mehr ein als du ausgibst ✔" : (totalFixed+totalSpecial>totalIncome ? "Achtung: Deine Ausgaben sind höher als deine Einnahmen!" : "Einnahmen und Ausgaben sind gleich hoch.");
-
     renderTransactionLists();
     renderSpecialList(specialMap);
     renderChart(totalFixed, totalSpecial, available);
+    renderSpecialChart(specialMap);
 }
 
 function renderTransactionLists() {
-    const incomeList = document.getElementById("transactionListIncome");
-    const fixedList = document.getElementById("transactionListFixed");
+    const incomeList=document.getElementById("transactionListIncome");
+    const fixedList=document.getElementById("transactionListFixed");
     incomeList.innerHTML=""; fixedList.innerHTML="";
-
     transactions.forEach(t=>{
-        const div = document.createElement('div');
-        div.classList.add('transaction');
-        let buttons = `<button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>`;
+        const div=document.createElement('div'); div.classList.add('transaction');
+        let buttons=`<button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>`;
         if(t.type==='income'||t.type==='fixed') buttons=`<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>`+buttons;
         div.innerHTML=`<div>${t.title} <small class='${t.type==='income'?'income':'expense'}'>${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €</small></div><div>${buttons}</div>`;
-        if(t.type==='income') incomeList.appendChild(div);
-        else if(t.type==='fixed') fixedList.appendChild(div);
+        if(t.type==='income') incomeList.appendChild(div); else if(t.type==='fixed') fixedList.appendChild(div);
     });
 }
 
 function renderSpecialList(specialMap){
-    const specialList = document.getElementById("transactionListSpecial");
-    specialList.innerHTML="";
+    const specialList=document.getElementById("transactionListSpecial"); specialList.innerHTML="";
     Object.keys(specialMap).forEach(title=>{
-        const div = document.createElement('div');
-        div.classList.add('transaction');
+        const div=document.createElement('div'); div.classList.add('transaction');
         div.innerHTML=`<div>${title} <small class='expense'>- ${specialMap[title].toFixed(2)} €</small></div><div></div>`;
         specialList.appendChild(div);
     });
 }
 
-// Neues Kuchendiagramm: Einnahmen als Basis, Ausgaben und verfügbares Geld als Anteile
+// Kuchendiagramm für Einnahmen vs Fixe/Sonderausgaben vs Verfügbares Geld
 function renderChart(fixed, special, available) {
-    const ctx = document.getElementById('financeChart').getContext('2d');
+    const ctx=document.getElementById('financeChart').getContext('2d');
     if(financeChart) financeChart.destroy();
-
-    financeChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Fixe Ausgaben', 'Sonderausgaben', 'Verfügbares Geld'],
-            datasets: [{
-                data: [fixed, special, available],
-                backgroundColor: ['#dc3545','#ffc107','#28a745']
-            }]
+    financeChart = new Chart(ctx,{
+        type:'pie',
+        data:{
+            labels:['Fixe Ausgaben','Sonderausgaben','Verfügbares Geld'],
+            datasets:[{ data:[fixed,special,available], backgroundColor:['#dc3545','#ffc107','#28a745'] }]
         },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Einnahmen-Verteilung' } }
-        }
+        options:{ responsive:true, plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Einnahmen-Verteilung' } } }
+    });
+}
+
+// Neues Kuchendiagramm für Sonderausgaben nach Bezeichnung
+function renderSpecialChart(specialMap){
+    const ctx=document.getElementById('specialChart').getContext('2d');
+    if(specialChart) specialChart.destroy();
+    const labels = Object.keys(specialMap);
+    const data = Object.values(specialMap);
+    const colors = labels.map((_,i)=>`hsl(${i*50 % 360}, 70%, 60%)`);
+    specialChart = new Chart(ctx,{
+        type:'pie',
+        data:{ labels:labels, datasets:[{ data:data, backgroundColor:colors }] },
+        options:{ responsive:true, plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'Sonderausgaben Vergleich' } } }
     });
 }
 
