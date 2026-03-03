@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finanz Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f9; }
     header { background: #007bff; color: white; padding: 15px; text-align: center; font-size: 24px; }
@@ -21,10 +22,6 @@
     .delete-btn, .edit-btn { padding: 5px 8px; font-size: 14px; margin-left: 5px; }
     .delete-btn { background: red; color: white; }
     .edit-btn { background: orange; color: white; }
-    .bar-container { margin-top: 10px; }
-    .bar { height: 20px; border-radius: 6px; margin-top: 5px; }
-    .bar-income { background: green; }
-    .bar-expense { background: red; }
     .overview { display: flex; justify-content: space-between; margin-top: 10px; }
     .overview div { width: 48%; padding: 10px; background: #f1f1f1; border-radius: 6px; text-align: center; }
 </style>
@@ -51,14 +48,7 @@
             <div>Fixe Ausgaben<br><strong id="totalFixed">0 €</strong></div>
             <div>Sonderausgaben<br><strong id="totalSpecial">0 €</strong></div>
         </div>
-        <div class="bar-container">
-            <div>Einnahmen</div>
-            <div id="incomeBar" class="bar bar-income" style="width:0%"></div>
-            <div>Fixe Ausgaben</div>
-            <div id="fixedBar" class="bar bar-expense" style="width:0%"></div>
-            <div>Sonderausgaben</div>
-            <div id="specialBar" class="bar bar-expense" style="width:0%"></div>
-        </div>
+        <canvas id="financeChart" style="margin-top:15px;"></canvas>
         <div id="comparison" style="margin-top:10px;font-weight:bold"></div>
         <button onclick="resetSpecialExpenses()" style="margin-top:10px; background:#dc3545;">Alle Sonderausgaben zurücksetzen</button>
     </div>
@@ -107,6 +97,7 @@
 
 <script>
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+let financeChart;
 
 function saveTransactions() {
     localStorage.setItem("transactions", JSON.stringify(transactions));
@@ -195,14 +186,11 @@ function render() {
     overviewSpecial.textContent = totalSpecial.toFixed(2)+" €";
     availableField.textContent = balance.toFixed(2)+" €";
 
-    document.getElementById("incomeBar").style.width=(totalIncome>0?Math.min(totalIncome,100):0)+"%";
-    document.getElementById("fixedBar").style.width=(totalFixed>0?Math.min(totalFixed,100):0)+"%";
-    document.getElementById("specialBar").style.width=(totalSpecial>0?Math.min(totalSpecial,100):0)+"%";
-
     document.getElementById("comparison").textContent = totalIncome>totalFixed+totalSpecial ? "Du nimmst mehr ein als du ausgibst ✔" : (totalFixed+totalSpecial>totalIncome ? "Achtung: Deine Ausgaben sind höher als deine Einnahmen!" : "Einnahmen und Ausgaben sind gleich hoch.");
 
     renderTransactionLists();
     renderSpecialList(specialMap);
+    renderChart(totalIncome, totalFixed, totalSpecial, balance);
 }
 
 function renderTransactionLists() {
@@ -233,8 +221,26 @@ function renderSpecialList(specialMap){
     });
 }
 
+function renderChart(income, fixed, special, available) {
+    const ctx = document.getElementById('financeChart').getContext('2d');
+    if(financeChart) financeChart.destroy();
+    financeChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Einnahmen', 'Fixe Ausgaben', 'Sonderausgaben', 'Verfügbares Geld'],
+            datasets: [{
+                data: [income, fixed, special, available],
+                backgroundColor: ['#28a745','#dc3545','#ffc107','#17a2b8']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
 render();
 </script>
-
 </body>
 </html>
