@@ -35,6 +35,7 @@
     <button id="overviewBtn" class="active" onclick="showPage('overview')">Übersicht</button>
     <button id="incomeBtn" onclick="showPage('income')">Einnahmen</button>
     <button id="fixedBtn" onclick="showPage('fixed')">Fixe Ausgaben</button>
+    <button id="specialBtn" onclick="showPage('special')">Sonderausgaben</button>
 </nav>
 
 <div class="container">
@@ -89,6 +90,19 @@
     </div>
 </div>
 
+<div id="specialPage" class="page" style="display:none;">
+    <div class="card">
+        <h3>Sonderausgaben</h3>
+        <input type="text" id="specialTitle" placeholder="Bezeichnung">
+        <input type="number" id="specialAmount" placeholder="Betrag" step="0.01">
+        <select id="specialType">
+            <option value="special">Sonderausgabe</option>
+        </select>
+        <button onclick="addTransactionSpecial()">Hinzufügen</button>
+        <div id="transactionListSpecial" style="margin-top:15px;"></div>
+    </div>
+</div>
+
 </div>
 
 <script>
@@ -112,6 +126,17 @@ function addTransaction(isFixedPage=false) {
     saveTransactions();
     titleInput.value = "";
     amountInput.value = "";
+    render();
+}
+
+function addTransactionSpecial() {
+    const title = document.getElementById("specialTitle").value;
+    const amount = parseFloat(document.getElementById("specialAmount").value);
+    if(!title || isNaN(amount)) { alert("Bitte gültige Daten eingeben"); return; }
+    transactions.push({ id: Date.now(), title, amount, type: 'special'});
+    saveTransactions();
+    document.getElementById("specialTitle").value="";
+    document.getElementById("specialAmount").value="";
     render();
 }
 
@@ -177,6 +202,7 @@ function render() {
     document.getElementById("comparison").textContent = totalIncome>totalFixed+totalSpecial ? "Du nimmst mehr ein als du ausgibst ✔" : (totalFixed+totalSpecial>totalIncome ? "Achtung: Deine Ausgaben sind höher als deine Einnahmen!" : "Einnahmen und Ausgaben sind gleich hoch.");
 
     renderTransactionLists();
+    renderSpecialList(specialMap);
 }
 
 function renderTransactionLists() {
@@ -193,6 +219,17 @@ function renderTransactionLists() {
         div.innerHTML=`<div>${t.title} <small class='${t.type==='income'?'income':'expense'}'>${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €</small></div><div>${buttons}</div>`;
         if(t.type==='income') incomeList.appendChild(div);
         else if(t.type==='fixed') fixedList.appendChild(div);
+    });
+}
+
+function renderSpecialList(specialMap){
+    const specialList = document.getElementById("transactionListSpecial");
+    specialList.innerHTML="";
+    Object.keys(specialMap).forEach(title=>{
+        const div = document.createElement('div');
+        div.classList.add('transaction');
+        div.innerHTML=`<div>${title} <small class='expense'>- ${specialMap[title].toFixed(2)} €</small></div><div></div>`;
+        specialList.appendChild(div);
     });
 }
 
