@@ -7,7 +7,7 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f6f9; }
         h1 { text-align: center; }
-        .container { max-width: 520px; margin: auto; }
+        .container { max-width: 540px; margin: auto; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         input, select, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
         button { background: #007bff; color: white; border: none; cursor: pointer; }
@@ -33,15 +33,18 @@
     <div class="card">
         <div>Kontostand: <strong id="balance">0 €</strong></div>
         <div>Einnahmen: <span class="income" id="totalIncome">0 €</span></div>
-        <div>Ausgaben: <span class="expense" id="totalExpense">0 €</span></div>
+        <div>Fixe Ausgaben: <span class="expense" id="totalFixed">0 €</span></div>
+        <div>Sonderausgaben: <span class="expense" id="totalSpecial">0 €</span></div>
         <div class="bar-container">
             <div>Einnahmen</div>
             <div id="incomeBar" class="bar bar-income" style="width:0%"></div>
-            <div>Ausgaben</div>
-            <div id="expenseBar" class="bar bar-expense" style="width:0%"></div>
+            <div>Fixe Ausgaben</div>
+            <div id="fixedBar" class="bar bar-expense" style="width:0%"></div>
+            <div>Sonderausgaben</div>
+            <div id="specialBar" class="bar bar-expense" style="width:0%"></div>
         </div>
         <div id="comparison" class="comparison-text"></div>
-        <button onclick="resetExpenses()" style="margin-top:10px; background:#dc3545;">Alle Ausgaben zurücksetzen</button>
+        <button onclick="resetSpecialExpenses()" style="margin-top:10px; background:#dc3545;">Alle Sonderausgaben zurücksetzen</button>
     </div>
 
     <div class="card">
@@ -49,7 +52,8 @@
         <input type="number" id="amount" placeholder="Betrag" step="0.01">
         <select id="type">
             <option value="income">Einnahme</option>
-            <option value="expense">Ausgabe</option>
+            <option value="fixed">Fixe Ausgabe</option>
+            <option value="special">Sonderausgabe</option>
         </select>
         <button onclick="addTransaction()">Hinzufügen</button>
     </div>
@@ -99,8 +103,8 @@
         }
     }
 
-    function resetExpenses() {
-        transactions = transactions.filter(t => t.type === 'income');
+    function resetSpecialExpenses() {
+        transactions = transactions.filter(t => t.type !== 'special');
         saveTransactions();
         render();
     }
@@ -108,38 +112,46 @@
     function render() {
         const list = document.getElementById("transactionList");
         list.innerHTML = "";
+
         let totalIncome = 0;
-        let totalExpense = 0;
+        let totalFixed = 0;
+        let totalSpecial = 0;
+
         transactions.forEach(t => {
             if (t.type === "income") totalIncome += t.amount;
-            else totalExpense += t.amount;
+            else if (t.type === "fixed") totalFixed += t.amount;
+            else if (t.type === "special") totalSpecial += t.amount;
+
             const div = document.createElement("div");
             div.classList.add("transaction");
+            let actionButtons = `<button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>`;
+            if (t.type==='income' || t.type==='fixed') actionButtons = `<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>` + actionButtons;
+
             div.innerHTML = `
                 <div>
-                    ${t.title}<br>
-                    <small class="${t.type==='income'?'income':'expense'}">
-                        ${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €
-                    </small>
+                    ${t.title} <small class='${t.type==='income'?'income':'expense'}'>${t.type==='income'?'+':'-'} ${t.amount.toFixed(2)} €</small>
                 </div>
-                <div>
-                    ${t.type==='income'?`<button class='edit-btn' onclick='editTransaction(${t.id})'>Bearbeiten</button>`:''}
-                    <button class='delete-btn' onclick='deleteTransaction(${t.id})'>X</button>
-                </div>
+                <div>${actionButtons}</div>
             `;
             list.appendChild(div);
         });
-        const balance = totalIncome - totalExpense;
+
+        const balance = totalIncome - totalFixed - totalSpecial;
+
         document.getElementById("totalIncome").textContent = totalIncome.toFixed(2)+" €";
-        document.getElementById("totalExpense").textContent = totalExpense.toFixed(2)+" €";
+        document.getElementById("totalFixed").textContent = totalFixed.toFixed(2)+" €";
+        document.getElementById("totalSpecial").textContent = totalSpecial.toFixed(2)+" €";
         document.getElementById("balance").textContent = balance.toFixed(2)+" €";
         document.getElementById("balance").style.color = balance>=0?"green":"red";
-        const maxValue = Math.max(totalIncome,totalExpense,1);
+
+        const maxValue = Math.max(totalIncome,totalFixed,totalSpecial,1);
         document.getElementById("incomeBar").style.width = (totalIncome/maxValue*100)+"%";
-        document.getElementById("expenseBar").style.width = (totalExpense/maxValue*100)+"%";
+        document.getElementById("fixedBar").style.width = (totalFixed/maxValue*100)+"%";
+        document.getElementById("specialBar").style.width = (totalSpecial/maxValue*100)+"%";
+
         const comparison = document.getElementById("comparison");
-        if(totalIncome>totalExpense){ comparison.textContent = "Du nimmst mehr ein als du ausgibst ✔"; comparison.style.color="green"; }
-        else if(totalExpense>totalIncome){ comparison.textContent = "Achtung: Deine Ausgaben sind höher als deine Einnahmen!"; comparison.style.color="red"; }
+        if(totalIncome>totalFixed+totalSpecial){ comparison.textContent = "Du nimmst mehr ein als du ausgibst ✔"; comparison.style.color="green"; }
+        else if(totalFixed+totalSpecial>totalIncome){ comparison.textContent = "Achtung: Deine Ausgaben sind höher als deine Einnahmen!"; comparison.style.color="red"; }
         else{ comparison.textContent = "Einnahmen und Ausgaben sind gleich hoch."; comparison.style.color="black"; }
     }
 
